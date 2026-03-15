@@ -1,0 +1,31 @@
+app = "price-tracker-salel"
+primary_region = "lhr"
+
+[build]
+
+[env]
+  DATA_DIR = "/data"
+  PLAYWRIGHT_FALLBACK = "1"
+  PORT = "3000"
+  ENABLE_INLINE_SCHEDULER = "1"
+  CHECK_INTERVAL_MINUTES = "360"
+  CHECK_BATCH_SIZE = "10"
+  CHECK_START_DELAY_MS = "60000"
+
+[[mounts]]
+  source = "price_tracker_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "30s"
+    interval = "15s"
+    method = "GET"
+    path = "/"
+    timeout = "10s"

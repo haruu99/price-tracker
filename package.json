@@ -1,0 +1,20 @@
+{
+  "name": "price-tracker-mvp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "run:scheduled-checks": "node scripts/run-scheduled-checks.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
+    "cheerio": "^1.2.0",
+    "next": "^16.1.6",
+    "nodemailer": "^8.0.2",
+    "playwright": "^1.58.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  }
+}
