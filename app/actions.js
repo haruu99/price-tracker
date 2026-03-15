@@ -87,21 +87,25 @@ export async function createTrackerAction(formData) {
     redirectWithState("/", { kind: "error", message: `Your current plan is limited to ${trackerLimit} tracked URLs.` });
   }
 
+  let trackerId;
+  let result;
+
   try {
-    const trackerId = await createTracker({ userId: user.id, label, url, selectorHint });
-    const result = await checkTrackerById(trackerId, { force: true, userId: user.id });
-    revalidatePath("/");
-    revalidatePath(`/trackers/${trackerId}`);
-    const feedback = await buildCheckFeedback(user.id, trackerId, result, "Tracker added.");
-    redirectWithState("/", {
-      kind: feedback.kind,
-      message: feedback.message,
-      trackerId,
-      preview: feedback.kind === "success" && result.outcome === "ok"
-    });
+    trackerId = await createTracker({ userId: user.id, label, url, selectorHint });
+    result = await checkTrackerById(trackerId, { force: true, userId: user.id });
   } catch (error) {
     redirectWithState("/", { kind: "error", message: error instanceof Error ? error.message : "Could not create tracker." });
   }
+
+  revalidatePath("/");
+  revalidatePath(`/trackers/${trackerId}`);
+  const feedback = await buildCheckFeedback(user.id, trackerId, result, "Tracker added.");
+  redirectWithState("/", {
+    kind: feedback.kind,
+    message: feedback.message,
+    trackerId,
+    preview: feedback.kind === "success" && result.outcome === "ok"
+  });
 }
 
 export async function checkTrackerNowAction(formData) {
@@ -109,20 +113,23 @@ export async function checkTrackerNowAction(formData) {
   const trackerId = Number(formData.get("trackerId"));
   const from = String(formData.get("from") || "/");
 
+  let result;
+
   try {
-    const result = await checkTrackerById(trackerId, { force: true, userId: user.id });
-    revalidatePath("/");
-    revalidatePath(`/trackers/${trackerId}`);
-    const feedback = await buildCheckFeedback(user.id, trackerId, result, "Tracker checked.");
-    redirectWithState(from, {
-      kind: feedback.kind,
-      message: feedback.message,
-      trackerId,
-      preview: feedback.kind === "success" && result.outcome === "ok"
-    });
+    result = await checkTrackerById(trackerId, { force: true, userId: user.id });
   } catch (error) {
     redirectWithState(from, { kind: "error", message: error instanceof Error ? error.message : "Check failed." });
   }
+
+  revalidatePath("/");
+  revalidatePath(`/trackers/${trackerId}`);
+  const feedback = await buildCheckFeedback(user.id, trackerId, result, "Tracker checked.");
+  redirectWithState(from, {
+    kind: feedback.kind,
+    message: feedback.message,
+    trackerId,
+    preview: feedback.kind === "success" && result.outcome === "ok"
+  });
 }
 
 export async function toggleTrackerPauseAction(formData) {
