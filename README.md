@@ -4,7 +4,8 @@ A narrow web app for small ecommerce sellers who only need one thing: paste comp
 
 ## What this version does
 
-- stores up to 10 public competitor product URLs
+- creates a private seller account with Supabase Auth
+- stores up to 10 public competitor product URLs per seller
 - checks prices immediately when a tracker is added
 - logs every scrape attempt and every price change
 - supports manual re-checks from the dashboard
@@ -21,7 +22,11 @@ A narrow web app for small ecommerce sellers who only need one thing: paste comp
 
 ## Important MVP caveat
 
-This app is still single-tenant. It is good for validating the product and the scraping workflow, but it does not have user auth or team accounts yet.
+This app now has seller-scoped accounts, but it is still early production:
+
+- no team seats yet
+- no Stripe billing yet
+- plan limits are stored in the profile and enforced server-side, but checkout is still the next step
 
 ## Local setup
 
@@ -48,6 +53,7 @@ cp .env.example .env
 5. Fill in your `.env` with:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `APP_BASE_URL`
 - `ALERT_FROM_EMAIL`
@@ -64,6 +70,7 @@ Then open [http://localhost:3000](http://localhost:3000).
 ## Environment variables
 
 - `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `APP_BASE_URL`
 - `ALERT_FROM_EMAIL`
@@ -91,10 +98,19 @@ Recommended values:
 
 Run [supabase/schema.sql](/Users/salel/Documents/New%20project/price-tracker/supabase/schema.sql) once in your Supabase SQL editor. The schema creates:
 
-- `settings`
+- `profiles`
 - `trackers`
 - `price_checks`
 - `alerts`
+
+You also need Supabase Auth configured for magic-link sign-in:
+
+- `Site URL`: your app URL, such as `http://localhost:3000` locally or your Vercel production URL
+- `Redirect URLs`: add `/auth/confirm` for local and production, for example:
+  - `http://localhost:3000/auth/confirm`
+  - `https://your-project-name.vercel.app/auth/confirm`
+
+For public launch, configure custom SMTP inside Supabase Auth. Supabase's default email service is only for team-member testing.
 
 ## Vercel deployment
 
@@ -154,6 +170,6 @@ This is useful for manual testing or if you later switch to an external schedule
 - public product pages only
 - no login-required stores
 - no add-to-cart pricing
-- one price per URL
+- one price per URL, per seller account
 - optional selector hint for pages that need help
 - browser fallback runs in GitHub Actions, but blocked or captcha-heavy sites can still fail

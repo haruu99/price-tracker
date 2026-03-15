@@ -7,11 +7,13 @@ import {
   createTracker,
   deleteTracker,
   getTrackerById,
-  saveSettings,
   setTrackerStatus,
+  updateProfile,
   updateTrackerBasics
 } from "@/lib/db";
 import { formatMoney } from "@/lib/format";
+import { requireCurrentAccount } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkTrackerById } from "@/lib/tracker-service";
 
 function redirectWithState(path, state) {
@@ -31,8 +33,8 @@ function readAlertEmail(formData) {
     .toLowerCase();
 }
 
-async function buildCheckFeedback(trackerId, result, emptySuccessMessage) {
-  const tracker = await getTrackerById(trackerId);
+async function buildCheckFeedback(userId, trackerId, result, emptySuccessMessage) {
+  const tracker = await getTrackerById(trackerId, userId);
   const trackerName = tracker?.label || result.pageTitle || tracker?.domain || "Product";
 
   if (result.outcome && result.outcome !== "ok") {
@@ -55,73 +57,42 @@ async function buildCheckFeedback(trackerId, result, emptySuccessMessage) {
   };
 }
 
-export async function saveSettingsAction(formData) {
+export async function updateProfileAction(formData) {
+  const { user } = await requireCurrentAccount();
   const alertEmail = readAlertEmail(formData);
-  const shopName = String(formData.get("shopName") || "").trim();
+  const displayName = String(formData.get("displayName") || "").trim();
 
   if (!alertEmail || !alertEmail.includes("@")) {
     redirectWithState("/", { kind: "error", message: "Enter a valid alert email." });
   }
 
-  await saveSettings({ shopName, alertEmail });
+  await updateProfile(user.id, { alertEmail, displayName });
   revalidatePath("/");
-  redirectWithState("/", { kind: "success", message: "Settings saved." });
+  redirectWithState("/", { kind: "success", message: "Account updated." });
 }
 
-export async function startTrackingAction(formData) {
-  const alertEmail = readAlertEmail(formData);
+export async function createTrackerAction(formData) {
+  const { user, profile } = await requireCurrentAccount();
   const label = String(formData.get("label") || "").trim();
   const url = String(formData.get("url") || "").trim();
   const selectorHint = String(formData.get("selectorHint") || "").trim();
-
-  if (!alertEmail || !alertEmail.includes("@")) {
-    redirectWithState("/", { kind: "error", message: "Enter a valid alert email." });
-  }
 
   if (!url) {
     redirectWithState("/", { kind: "error", message: "Paste a competitor product URL to start tracking." });
   }
 
-  const trackerCount = await countTrackers();
-  if (trackerCount >= 10) {
-    redirectWithState("/", { kind: "error", message: "The MVP is limited to 10 tracked URLs." });
-  }
-
-  await saveSettings({ shopName: "", alertEmail });
-
-  try {
-    const trackerId = await createTracker({ label, url, selectorHint });
-    const result = await checkTrackerById(trackerId, { force: true });
-    revalidatePath("/");
-    revalidatePath(`/trackers/${trackerId}`);
-    const feedback = await buildCheckFeedback(trackerId, result, "First tracker added.");
-    redirectWithState("/", {
-      kind: feedback.kind,
-      message: feedback.message,
-      trackerId,
-      preview: feedback.kind === "success" && result.outcome === "ok"
-    });
-  } catch (error) {
-    redirectWithState("/", { kind: "error", message: error instanceof Error ? error.message : "Could not start tracking." });
-  }
-}
-
-export async function createTrackerAction(formData) {
-  const label = String(formData.get("label") || "").trim();
-  const url = String(formData.get("url") || "").trim();
-  const selectorHint = String(formData.get("selectorHint") || "").trim();
-
-  const trackerCount = await countTrackers();
-  if (trackerCount >= 10) {
-    redirectWithState("/", { kind: "error", message: "The MVP is limited to 10 tracked URLs." });
+  const trackerCount = await countTrackers(user.id);
+  const trackerLimit = Number(profile.url_limit || 10);
+  if (trackerCount >= trackerLimit) {
+    redirectWithState("/", { kind: "error", message: `Your current plan is limited to ${trackerLimit} tracked URLs.` });
   }
 
   try {
-    const trackerId = await createTracker({ label, url, selectorHint });
-    const result = await checkTrackerById(trackerId, { force: true });
+    const trackerId = await createTracker({ userId: user.id, label, url, selectorHint });
+    const result = await checkTrackerById(trackerId, { force: true, userId: user.id });
     revalidatePath("/");
     revalidatePath(`/trackers/${trackerId}`);
-    const feedback = await buildCheckFeedback(trackerId, result, "Tracker added.");
+    const feedback = await buildCheckFeedback(user.id, trackerId, result, "Tracker added.");
     redirectWithState("/", {
       kind: feedback.kind,
       message: feedback.message,
@@ -134,14 +105,15 @@ export async function createTrackerAction(formData) {
 }
 
 export async function checkTrackerNowAction(formData) {
+  const { user } = await requireCurrentAccount();
   const trackerId = Number(formData.get("trackerId"));
   const from = String(formData.get("from") || "/");
 
   try {
-    const result = await checkTrackerById(trackerId, { force: true });
+    const result = await checkTrackerById(trackerId, { force: true, userId: user.id });
     revalidatePath("/");
     revalidatePath(`/trackers/${trackerId}`);
-    const feedback = await buildCheckFeedback(trackerId, result, "Tracker checked.");
+    const feedback = await buildCheckFeedback(user.id, trackerId, result, "Tracker checked.");
     redirectWithState(from, {
       kind: feedback.kind,
       message: feedback.message,
@@ -154,35 +126,47 @@ export async function checkTrackerNowAction(formData) {
 }
 
 export async function toggleTrackerPauseAction(formData) {
+  const { user } = await requireCurrentAccount();
   const trackerId = Number(formData.get("trackerId"));
   const status = String(formData.get("status") || "paused");
   const from = String(formData.get("from") || "/");
 
-  await setTrackerStatus(trackerId, status);
+  await setTrackerStatus(trackerId, user.id, status);
   revalidatePath("/");
   revalidatePath(`/trackers/${trackerId}`);
   redirectWithState(from, { kind: "success", message: status === "paused" ? "Tracker paused." : "Tracker resumed." });
 }
 
 export async function deleteTrackerAction(formData) {
+  const { user } = await requireCurrentAccount();
   const trackerId = Number(formData.get("trackerId"));
   const from = String(formData.get("from") || "/");
-  await deleteTracker(trackerId);
+  await deleteTracker(trackerId, user.id);
   revalidatePath("/");
   redirectWithState(from === `/trackers/${trackerId}` ? "/" : from, { kind: "success", message: "Tracker deleted." });
 }
 
 export async function updateTrackerAction(formData) {
+  const { user } = await requireCurrentAccount();
   const trackerId = Number(formData.get("trackerId"));
   const label = String(formData.get("label") || "").trim();
   const selectorHint = String(formData.get("selectorHint") || "").trim();
 
-  if (!(await getTrackerById(trackerId))) {
+  if (!(await getTrackerById(trackerId, user.id))) {
     redirectWithState("/", { kind: "error", message: "Tracker not found." });
   }
 
-  await updateTrackerBasics(trackerId, { label, selectorHint });
+  await updateTrackerBasics(trackerId, { userId: user.id, label, selectorHint });
   revalidatePath("/");
   revalidatePath(`/trackers/${trackerId}`);
   redirectWithState(`/trackers/${trackerId}`, { kind: "success", message: "Tracker updated." });
+}
+
+export async function signOutAction() {
+  const supabase = await createSupabaseServerClient();
+  if (supabase) {
+    await supabase.auth.signOut();
+  }
+
+  redirectWithState("/", { kind: "success", message: "Signed out." });
 }

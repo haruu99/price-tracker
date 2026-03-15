@@ -8,6 +8,7 @@ import {
   updateTrackerAction
 } from "@/app/actions";
 import { PriceChangeSummary } from "@/components/PriceChangeSummary";
+import { requireCurrentAccount } from "@/lib/auth";
 import { getTrackerById, getTrackerHistory } from "@/lib/db";
 import { formatDateTime, formatMoney, formatOutcome, formatRelativeTime } from "@/lib/format";
 import { StatusPill } from "@/components/StatusPill";
@@ -16,15 +17,16 @@ export const dynamic = "force-dynamic";
 
 export default async function TrackerDetailPage({ params, searchParams }) {
   noStore();
+  const { user } = await requireCurrentAccount();
   const { id } = await params;
   const resolvedSearchParams = await searchParams;
-  const tracker = await getTrackerById(id);
+  const tracker = await getTrackerById(id, user.id);
 
   if (!tracker) {
     notFound();
   }
 
-  const history = await getTrackerHistory(id, 30);
+  const history = await getTrackerHistory(id, user.id, 30);
 
   return (
     <main className="page-shell">

@@ -15,7 +15,15 @@ This is the fastest path to a fully free traction test:
 4. Copy:
 
 - Project URL
+- Publishable key
 - Service role key
+
+5. In `Authentication -> URL Configuration`, set:
+
+- `Site URL`: your deployed app URL
+- `Redirect URL`: `https://your-app.vercel.app/auth/confirm`
+
+Add `http://localhost:3000/auth/confirm` too for local testing.
 
 ## 2. Create Resend
 
@@ -31,6 +39,8 @@ This is the fastest path to a fully free traction test:
 3. Add every variable from [\.env.vercel.example](/Users/salel/Documents/New%20project/price-tracker/.env.vercel.example).
 4. Replace `APP_BASE_URL` with your real Vercel URL.
 5. Deploy.
+
+You must also paste `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` into Vercel now because the app has real seller sign-in.
 
 ## 4. Configure GitHub Actions secrets
 
@@ -60,11 +70,12 @@ After that, GitHub will run the scheduled checks every 6 hours.
 ## 6. Smoke test the app
 
 1. Open the Vercel app URL.
-2. Add your alert email and one competitor URL.
-3. Confirm the first scrape succeeds.
-4. Open Supabase and verify rows exist in:
+2. Request a magic link and sign in.
+3. Add your alert email and one competitor URL.
+4. Confirm the first scrape succeeds.
+5. Open Supabase and verify rows exist in:
 
-- `settings`
+- `profiles`
 - `trackers`
 - `price_checks`
 
@@ -80,3 +91,4 @@ After that, GitHub will run the scheduled checks every 6 hours.
 - Vercel should keep `PLAYWRIGHT_FALLBACK=0`.
 - GitHub Actions should keep `PLAYWRIGHT_FALLBACK=1`.
 - If Resend is not configured yet, the app still logs alerts in the dashboard and database.
+- For public launch, Supabase Auth should use custom SMTP so any seller can receive magic links.
