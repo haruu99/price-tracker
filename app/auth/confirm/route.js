@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createServerClient } from "@supabase/ssr";
+import { getPublicSupabaseConfig } from "@/lib/supabase-config";
 
 export async function GET(request) {
   const { origin, searchParams } = new URL(request.url);
@@ -13,13 +14,29 @@ export async function GET(request) {
     return NextResponse.redirect(missingCodeUrl);
   }
 
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) {
+  const config = getPublicSupabaseConfig({ optional: true });
+  if (!config) {
     const missingEnvUrl = new URL("/", origin);
     missingEnvUrl.searchParams.set("kind", "error");
     missingEnvUrl.searchParams.set("message", "Supabase auth is not configured yet.");
     return NextResponse.redirect(missingEnvUrl);
   }
+
+  const redirectUrl = new URL(next, origin);
+  const response = NextResponse.redirect(redirectUrl);
+
+  const supabase = createServerClient(config.url, config.publishableKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
+      }
+    }
+  });
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
@@ -29,5 +46,5 @@ export async function GET(request) {
     return NextResponse.redirect(errorUrl);
   }
 
-  return NextResponse.redirect(new URL(next, origin));
+  return response;
 }
