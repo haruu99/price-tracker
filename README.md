@@ -48,7 +48,7 @@ PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install chromium
 cp .env.example .env
 ```
 
-4. Create a Supabase project and run [supabase/schema.sql](/Users/salel/Documents/New%20project/price-tracker/supabase/schema.sql) in the SQL editor.
+4. Create a Supabase project and run [supabase/schema.sql](supabase/schema.sql) in the SQL editor.
 
 5. Fill in your `.env` with:
 
@@ -96,7 +96,7 @@ Recommended values:
 
 ## Supabase setup
 
-Run [supabase/schema.sql](/Users/salel/Documents/New%20project/price-tracker/supabase/schema.sql) once in your Supabase SQL editor. The schema creates:
+Run [supabase/schema.sql](supabase/schema.sql) once in your Supabase SQL editor. The schema creates:
 
 - `profiles`
 - `trackers`
@@ -116,13 +116,13 @@ For public launch, configure custom SMTP inside Supabase Auth. Supabase's defaul
 
 1. Push this repo to GitHub.
 2. Import the repo into Vercel.
-3. Add every variable from [\.env.vercel.example](/Users/salel/Documents/New%20project/price-tracker/.env.vercel.example).
+3. Add every variable from [.env.vercel.example](.env.vercel.example).
 
 4. Deploy on the Hobby plan.
 
 ## GitHub Actions scheduler
 
-The scheduled worker lives in [scheduled-price-checks.yml](/Users/salel/Documents/New%20project/price-tracker/.github/workflows/scheduled-price-checks.yml).
+The scheduled worker lives in [scheduled-price-checks.yml](.github/workflows/scheduled-price-checks.yml).
 
 It currently runs every 6 hours and can also be triggered manually from the GitHub Actions tab.
 
@@ -138,7 +138,7 @@ Add these GitHub Actions secrets:
 - `SMTP_USER`
 - `SMTP_PASS`
 
-Use [\.env.github-actions.example](/Users/salel/Documents/New%20project/price-tracker/.env.github-actions.example) as the exact template.
+Use [.env.github-actions.example](.env.github-actions.example) as the exact template.
 
 The workflow installs Playwright, enables browser fallback, and runs:
 
@@ -148,7 +148,7 @@ npm run run:scheduled-checks
 
 ## Fastest path
 
-If you want the shortest launch path, follow [free-launch-checklist.md](/Users/salel/Documents/New%20project/price-tracker/docs/free-launch-checklist.md).
+If you want the shortest launch path, follow [free-launch-checklist.md](docs/free-launch-checklist.md).
 
 ## Cron endpoint
 

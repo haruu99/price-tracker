@@ -11,7 +11,7 @@ This is the fastest path to a fully free traction test:
 
 1. Create a new Supabase project.
 2. Open the SQL editor.
-3. Run [schema.sql](/Users/salel/Documents/New%20project/price-tracker/supabase/schema.sql).
+3. Run [schema.sql](../supabase/schema.sql).
 4. Copy:
 
 - Project URL
@@ -36,7 +36,7 @@ Add `http://localhost:3000/auth/confirm` too for local testing.
 
 1. Push this repo to GitHub.
 2. Import the repo into Vercel.
-3. Add every variable from [\.env.vercel.example](/Users/salel/Documents/New%20project/price-tracker/.env.vercel.example).
+3. Add every variable from [.env.vercel.example](../.env.vercel.example).
 4. Replace `APP_BASE_URL` with your real Vercel URL.
 5. Deploy.
 
@@ -56,7 +56,7 @@ In your GitHub repo, go to `Settings -> Secrets and variables -> Actions` and ad
 - `SMTP_USER`
 - `SMTP_PASS`
 
-The exact values are templated in [\.env.github-actions.example](/Users/salel/Documents/New%20project/price-tracker/.env.github-actions.example).
+The exact values are templated in [.env.github-actions.example](../.env.github-actions.example).
 
 ## 5. Enable the scheduler
 
